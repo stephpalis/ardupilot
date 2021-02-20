@@ -1059,7 +1059,8 @@ void ToyMode::load_test_run(void)
  */
 void ToyMode::arm_check_compass(void)
 {
-    // check for unreasonable compass offsets
+    return;
+    /** // check for unreasonable compass offsets
     Vector3f offsets = copter.compass.get_offsets();
     float field = copter.compass.get_field().length();
     
@@ -1070,7 +1071,7 @@ void ToyMode::arm_check_compass(void)
             gcs().send_text(MAV_SEVERITY_INFO, "Tmode: enable compass learning");
             copter.compass.set_learn_type(Compass::LEARN_INFLIGHT, false);
         }
-    }
+    }*/
 }
 
 #endif // TOY_MODE_ENABLED
