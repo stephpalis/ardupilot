@@ -1,6 +1,6 @@
 Instructions Adopted From: https://ardupilot.org/dev/docs/building-setup-linux.html
 
-1. Clone Repo ```https://github.com/stephpalis/ardupilot.git```
+1. Clone Repo ```git clone git@github.com:stephpalis/ardupilot.git```
 2. Download gcc compiler ```https://firmware.ardupilot.org/Tools/STM32-tools/```
 3. `sudo apt install cmake`
 4. `sudo apt install genromfs`
