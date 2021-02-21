@@ -123,3 +123,7 @@ segv_*out
 /ArduPlane/scripts/
 /ArduSub/scripts/
 persistent.dat
+.ccache/
+.bash_history
+.cache/
+.local/

@@ -22,3 +22,6 @@ ENV CCACHE_MAXSIZE=1G
 ENV PATH /usr/lib/ccache:/ardupilot/Tools:${PATH}
 
 RUN pip install future
+
+CMD /ardupilot/waf configure --board=skyviper-journey && \
+    /ardupilot/waf build --target=bin/arducopter -v
