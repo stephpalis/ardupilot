@@ -20,3 +20,5 @@ RUN chown -R ardupilot:ardupilot /ardupilot && \
 USER ardupilot
 ENV CCACHE_MAXSIZE=1G
 ENV PATH /usr/lib/ccache:/ardupilot/Tools:${PATH}
+
+RUN pip install future
