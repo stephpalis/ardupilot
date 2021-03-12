@@ -92,6 +92,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
+    SCHED_TASK(custom_loop,            50,    200),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -287,6 +288,13 @@ void Copter::rc_loop()
     // -----------------------------------------
     read_radio();
     rc().read_mode_switch();
+}
+
+void Copter::custom_loop()
+{
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS SPOOFING DETECTION");
+    gcs().send_message(MSG_AUTOPILOT_VERSION);
+    gcs().send_message(MSG_GPS_SPOOFING_DETECTION);
 }
 
 // throttle_loop - should be run at 50 hz

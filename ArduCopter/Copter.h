@@ -658,6 +658,7 @@ private:
     // ArduCopter.cpp
     void fast_loop();
     void rc_loop();
+    void custom_loop();
     void throttle_loop();
     void update_batt_compass(void);
     void fourhundred_hz_logging();
