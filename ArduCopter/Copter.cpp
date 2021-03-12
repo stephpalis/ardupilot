@@ -294,7 +294,6 @@ void Copter::custom_loop()
 {
     gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS SPOOFING DETECTION");
     gcs().send_message(MSG_AUTOPILOT_VERSION);
-    gcs().send_message(MSG_GPS_SPOOFING_DETECTION);
 }
 
 // throttle_loop - should be run at 50 hz
