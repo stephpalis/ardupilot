@@ -6,4 +6,4 @@ if [ -z "$1" ]; then
 fi
 
 echo mounting \""$(pwd)"\" to \"/ardupilot\"
-sudo docker run --rm -it -v "$(pwd)":/ardupilot "$1":latest "$2"
+docker run --rm -it -v "$(pwd)":/ardupilot "$1":latest "$2"

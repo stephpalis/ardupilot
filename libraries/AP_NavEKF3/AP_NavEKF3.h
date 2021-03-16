@@ -122,6 +122,7 @@ public:
     // Returns 0 if command rejected
     // Returns 1 if command accepted
     uint8_t setInhibitGPS(void);
+    bool getInhibitGPS(void);
 
     // Set the argument to true to prevent the EKF using the GPS vertical velocity
     // This can be used for situations where GPS velocity errors are causing problems with height accuracy

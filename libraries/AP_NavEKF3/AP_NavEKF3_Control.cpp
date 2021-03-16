@@ -530,6 +530,11 @@ uint8_t NavEKF3_core::setInhibitGPS(void)
     }
 }
 
+bool NavEKF3_core::getInhibitGPS(void)
+{
+    return gpsInhibit;
+}
+
 // Update the filter status
 void  NavEKF3_core::updateFilterStatus(void)
 {

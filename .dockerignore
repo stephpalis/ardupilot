@@ -1,0 +1,10 @@
+.azure/*
+.github/*
+AntennaTracker/*
+APMrover2/*
+ArduPlane/*
+ArduSub/*
+docs/*
+benchmarks/*
+build/*
+tests/*

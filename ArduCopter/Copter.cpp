@@ -92,7 +92,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
-    SCHED_TASK(custom_loop,            50,    200),
+    SCHED_TASK(custom_loop,            10,    200),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -219,6 +219,8 @@ void Copter::setup()
 
     init_ardupilot();
 
+    ahrs.setInhibitGPS();
+
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
 }
@@ -292,8 +294,22 @@ void Copter::rc_loop()
 
 void Copter::custom_loop()
 {
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS SPOOFING DETECTION");
-    gcs().send_message(MSG_AUTOPILOT_VERSION);
+    if (!ahrs.getInhibitGPS()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
+        uint8_t resp = ahrs.setInhibitGPS();
+
+        switch (resp) {
+            case 0:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
+            case 1:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
+            case 2:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
+            default:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown");
+        }
+
+    }
 }
 
 // throttle_loop - should be run at 50 hz

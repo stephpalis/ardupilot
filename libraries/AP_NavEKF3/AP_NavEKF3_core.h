@@ -133,6 +133,7 @@ public:
     // Returns 0 if command rejected
     // Returns 1 if command accepted
     uint8_t setInhibitGPS(void);
+    bool getInhibitGPS(void);
 
     // return the horizontal speed limit in m/s set by optical flow sensor limits
     // return the scale factor to be applied to navigation velocity gains to compensate for increase in velocity noise with height when using optical flow

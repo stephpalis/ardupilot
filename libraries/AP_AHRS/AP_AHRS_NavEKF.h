@@ -166,6 +166,7 @@ public:
 
     // inhibit GPS usage
     uint8_t setInhibitGPS(void);
+    bool getInhibitGPS(void);
 
     // get speed limit
     void getEkfControlLimits(float &ekfGndSpdLimit, float &ekfNavVelGainScaler) const;

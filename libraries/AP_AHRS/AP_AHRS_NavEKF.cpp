@@ -1250,6 +1250,18 @@ uint8_t AP_AHRS_NavEKF::setInhibitGPS(void)
     }
 }
 
+bool AP_AHRS_NavEKF::getInhibitGPS(void)
+{
+    switch (ekf_type()) {
+        case 0:
+        case 2:
+        default:
+            return EKF2.getInhibitGPS();
+        case 3:
+            return EKF3.getInhibitGPS();
+    }
+}
+
 // get speed limit
 void AP_AHRS_NavEKF::getEkfControlLimits(float &ekfGndSpdLimit, float &ekfNavVelGainScaler) const
 {
