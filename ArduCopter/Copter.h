@@ -24,6 +24,8 @@
 #include <cmath>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string>
+#include <sstream>
 
 #include <AP_HAL/AP_HAL.h>
 
@@ -658,7 +660,6 @@ private:
     // ArduCopter.cpp
     void fast_loop();
     void rc_loop();
-    void custom_loop();
     void throttle_loop();
     void update_batt_compass(void);
     void fourhundred_hz_logging();
@@ -672,6 +673,10 @@ private:
     void update_super_simple_bearing(bool force_update);
     void read_AHRS(void);
     void update_altitude();
+
+    void ekf_inhibit_gps_loop();
+    void data_gps_loop();
+    void data_sensor_loop();
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);

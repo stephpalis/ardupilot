@@ -92,7 +92,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
-    SCHED_TASK(custom_loop,            10,    200),
+    SCHED_TASK(ekf_inhibit_gps_loop,            2,    100),
+    SCHED_TASK(data_gps_loop,            1,    100),
+    SCHED_TASK(data_sensor_loop,            1,    100),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -282,6 +284,63 @@ void Copter::fast_loop()
     }
 }
 
+void Copter::ekf_inhibit_gps_loop()
+{
+    // inhibit EKF from fusing GPS data for corrections
+    if (!ahrs.getInhibitGPS()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
+        uint8_t resp = ahrs.setInhibitGPS();
+
+        switch (resp) {
+            case 0:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
+                break;
+            case 1:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
+                break;
+            case 2:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
+                break;
+            default:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
+        }
+    }
+}
+
+void Copter::data_gps_loop()
+{
+    uint32_t ground_speed = gps.ground_speed_cm();  // cm/s
+    float ground_course = gps.ground_course(); // deg
+    uint8_t sat_count = gps.num_sats();
+    const Vector3f velocity = gps.velocity();  // Vector3<float>
+
+    gcs().send_text(MAV_SEVERITY_INFO, "[GPS] GS: %lu; GC: %f", ground_speed, ground_course);
+    gcs().send_text(MAV_SEVERITY_INFO, "[GPS] SC: %u; VX: %f; VY: %f; VZ: %f", sat_count, velocity.x, velocity.y, velocity.z);
+}
+
+void Copter::data_sensor_loop()
+{
+    float airspeed;
+    Vector3f velocity;
+    Vector3f pos_rel_home;
+
+//    bool set_airspeed = ahrs.airspeed_estimate(&airspeed);
+//    bool set_velocity = ahrs.get_velocity_NED(velocity);
+//    bool set_position = ahrs.get_relative_position_NED_home(pos_rel_home);
+    ahrs.airspeed_estimate(&airspeed);
+    ahrs.get_velocity_NED(velocity);
+    ahrs.get_relative_position_NED_home(pos_rel_home);
+
+    Vector2f ground_speed = ahrs.groundspeed_vector();
+    Vector3f wind = ahrs.wind_estimate();
+
+    gcs().send_text(MAV_SEVERITY_INFO, "[SD] GSX: %f; GSY: %f; AS: %f", ground_speed.x, ground_speed.y, airspeed);
+    gcs().send_text(MAV_SEVERITY_INFO, "[SD] VX: %f; VY: %f; VZ: %f", velocity.x, velocity.y, velocity.z);
+    gcs().send_text(MAV_SEVERITY_INFO, "[SD] WX: %f; WY: %f; WZ: %f", wind.x, wind.y, wind.z);
+    gcs().send_text(MAV_SEVERITY_INFO, "[SD] PHX: %f; PHY: %f; PHZ: %f", pos_rel_home.x, pos_rel_home.y, pos_rel_home.z);
+}
+
+
 // rc_loops - reads user input from transmitter/receiver
 // called at 100hz
 void Copter::rc_loop()
@@ -290,26 +349,6 @@ void Copter::rc_loop()
     // -----------------------------------------
     read_radio();
     rc().read_mode_switch();
-}
-
-void Copter::custom_loop()
-{
-    if (!ahrs.getInhibitGPS()) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
-        uint8_t resp = ahrs.setInhibitGPS();
-
-        switch (resp) {
-            case 0:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
-            case 1:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
-            case 2:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
-            default:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown");
-        }
-
-    }
 }
 
 // throttle_loop - should be run at 50 hz
