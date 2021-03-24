@@ -93,8 +93,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
     SCHED_TASK(ekf_inhibit_gps_loop,            2,    100),
-    SCHED_TASK(data_gps_loop,            10,    100),
-    SCHED_TASK(data_sensor_loop,            10,    100),
+    SCHED_TASK(data_gps_loop,            5,    200),
+    SCHED_TASK(data_sensor_loop,            5,    200),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -316,8 +316,9 @@ void Copter::data_gps_loop()
 
     uint32_t time_ms = AP_HAL::millis();
 
-    gcs().send_text(MAV_SEVERITY_INFO, "[GPS][%lu] GS: %lu; GC: %f", time_ms, ground_speed, ground_course);
-    gcs().send_text(MAV_SEVERITY_INFO, "[GPS][%lu] SC: %u; VX: %f; VY: %f; VZ: %f", time_ms, sat_count, velocity.x, velocity.y, velocity.z);
+    gcs().send_text(MAV_SEVERITY_INFO, "GPS0[%lu] GS: %lu; GC: %f", time_ms, ground_speed, ground_course);
+    gcs().send_text(MAV_SEVERITY_INFO, "GPS1[%lu] SC: %u; VX: %f", time_ms, sat_count, velocity.x);
+    gcs().send_text(MAV_SEVERITY_INFO, "GPS2[%lu] VY: %f; VZ: %f", time_ms, velocity.y, velocity.z);
 }
 
 void Copter::data_sensor_loop()
@@ -326,9 +327,6 @@ void Copter::data_sensor_loop()
     Vector3f velocity;
     Vector3f pos_rel_home;
 
-//    bool set_airspeed = ahrs.airspeed_estimate(&airspeed);
-//    bool set_velocity = ahrs.get_velocity_NED(velocity);
-//    bool set_position = ahrs.get_relative_position_NED_home(pos_rel_home);
     ahrs.airspeed_estimate(&airspeed);
     ahrs.get_velocity_NED(velocity);
     ahrs.get_relative_position_NED_home(pos_rel_home);
@@ -338,10 +336,12 @@ void Copter::data_sensor_loop()
 
     uint32_t time_ms = AP_HAL::millis();
 
-    gcs().send_text(MAV_SEVERITY_INFO, "[SD][%lu] GSX: %f; GSY: %f; AS: %f", time_ms, ground_speed.x, ground_speed.y, airspeed);
-    gcs().send_text(MAV_SEVERITY_INFO, "[SD][%lu] VX: %f; VY: %f; VZ: %f", time_ms, velocity.x, velocity.y, velocity.z);
-    gcs().send_text(MAV_SEVERITY_INFO, "[SD][%lu] WX: %f; WY: %f; WZ: %f", time_ms, wind.x, wind.y, wind.z);
-    gcs().send_text(MAV_SEVERITY_INFO, "[SD][%lu] PHX: %f; PHY: %f; PHZ: %f", time_ms, pos_rel_home.x, pos_rel_home.y, pos_rel_home.z);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD0[%lu] GSX: %f; GSY: %f", time_ms, ground_speed.x, ground_speed.y);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD1[%lu] AS: %f; VX: %f", time_ms, airspeed, velocity.x);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD2[%lu] VY: %f; VZ: %f", time_ms, velocity.y, velocity.z);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD3[%lu] WX: %f; WY: %f", time_ms, wind.x, wind.y);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD4[%lu] WZ: %f; PHX: %f", time_ms, wind.z, pos_rel_home.x);
+    gcs().send_text(MAV_SEVERITY_INFO, "SD5[%lu] PHY: %f; PHZ: %f", time_ms, pos_rel_home.y, pos_rel_home.z);
 }
 
 
