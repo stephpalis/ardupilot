@@ -93,8 +93,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
     SCHED_TASK(ekf_inhibit_gps_loop,            2,    100),
-    SCHED_TASK(data_gps_loop,            5,    200),
-    SCHED_TASK(data_sensor_loop,            5,    200),
+    SCHED_TASK(data_gps_loop,            10,    250),
+    SCHED_TASK(data_sensor_loop,            10,    250),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -312,7 +312,7 @@ void Copter::data_gps_loop()
     uint32_t ground_speed = gps.ground_speed_cm();  // cm/s
     float ground_course = gps.ground_course(); // deg
     uint8_t sat_count = gps.num_sats();
-    const Vector3f velocity = gps.velocity();  // Vector3<float>
+    const Vector3f velocity = gps.velocity();  // Vector3<float> (m/s)
 
     uint32_t time_ms = AP_HAL::millis();
 
@@ -328,10 +328,10 @@ void Copter::data_sensor_loop()
     Vector3f pos_rel_home;
 
     ahrs.airspeed_estimate(&airspeed);
-    ahrs.get_velocity_NED(velocity);
+    ahrs.get_velocity_NED(velocity);  // m/s
     ahrs.get_relative_position_NED_home(pos_rel_home);
 
-    Vector2f ground_speed = ahrs.groundspeed_vector();
+    Vector2f ground_speed = ahrs.groundspeed_vector();  // m/s
     Vector3f wind = ahrs.wind_estimate();
 
     uint32_t time_ms = AP_HAL::millis();
