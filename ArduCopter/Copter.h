@@ -674,9 +674,7 @@ private:
     void read_AHRS(void);
     void update_altitude();
 
-    void ekf_inhibit_gps_loop();
-    void data_gps_loop();
-    void data_sensor_loop();
+    void data_loop();
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);
