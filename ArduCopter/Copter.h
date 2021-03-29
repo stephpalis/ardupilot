@@ -193,6 +193,22 @@
 
 #include "mode.h"
 
+#ifndef THRESHOLD_GS_CM
+#define THRESHOLD_GS_CM 133
+#endif
+
+#ifndef THRESHOLD_VX_CM
+#define THRESHOLD_VX_CM 151
+#endif
+
+#ifndef THRESHOLD_VY_CM
+#define THRESHOLD_VY_CM 65
+#endif
+
+#ifndef THRESHOLD_VZ_CM
+#define THRESHOLD_VZ_CM 7
+#endif
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;

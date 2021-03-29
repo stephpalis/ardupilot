@@ -92,7 +92,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
-    SCHED_TASK(data_loop,            2,    400),
+    SCHED_TASK(data_loop,            3,    500),
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -284,6 +284,10 @@ void Copter::fast_loop()
 
 void Copter::data_loop()
 {
+    // ==============================================================================================================
+    // EKF
+    // ==============================================================================================================
+
     // inhibit EKF from fusing GPS data for corrections
     if (!ahrs.getInhibitGPS()) {
         gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
@@ -304,41 +308,82 @@ void Copter::data_loop()
         }
     }
 
-    // GPS DATA
-
-    uint32_t gps_ground_speed = gps.ground_speed_cm();  // cm/s
-    float gps_ground_course = gps.ground_course(); // deg
-    uint8_t gps_sat_count = gps.num_sats();
-    const Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
-
     uint32_t time_ms = AP_HAL::millis();
 
-    gcs().send_text(MAV_SEVERITY_INFO, "GPS0[%lu] GS: %lu; GC: %f", time_ms, gps_ground_speed, gps_ground_course);
-    gcs().send_text(MAV_SEVERITY_INFO, "GPS1[%lu] SC: %u; VX: %f", time_ms, gps_sat_count, gps_velocity.x);
-    gcs().send_text(MAV_SEVERITY_INFO, "GPS2[%lu] VY: %f; VZ: %f", time_ms, gps_velocity.y, gps_velocity.z);
+    // ==============================================================================================================
+    // GPS DATA
+    // ==============================================================================================================
 
+    uint32_t gps_ground_speed = gps.ground_speed_cm();  // cm/s
+
+    Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
+    uint32_t gps_velocity_x = (uint32_t)(gps_velocity.x * 100.0);  // cm/s
+    uint32_t gps_velocity_y = (uint32_t)(gps_velocity.y * 100.0);  // cm/s
+    uint32_t gps_velocity_z = (uint32_t)(gps_velocity.z * 100.0);  // cm/s
+
+    // ==============================================================================================================
     // SENSOR DATA
+    // ==============================================================================================================
 
-    float sd_airspeed;
-    Vector3f sd_velocity;
-    Vector3f sd_pos_rel_home;
+    Vector3f sd_velocity;  // Vector3<float> (m/s)
+    ahrs.get_velocity_NED(sd_velocity);  // cm/s
+    uint32_t sd_velocity_x = (uint32_t)(sd_velocity.x * 100.0);  // cm/s
+    uint32_t sd_velocity_y = (uint32_t)(sd_velocity.y * 100.0);  // cm/s
+    uint32_t sd_velocity_z = (uint32_t)(sd_velocity.z * 100.0);  // cm/s
 
-    ahrs.airspeed_estimate(&sd_airspeed);
-    ahrs.get_velocity_NED(sd_velocity);  // m/s
-    ahrs.get_relative_position_NED_home(sd_pos_rel_home);
+    Vector2f sd_ground_speed_vec = ahrs.groundspeed_vector();  // Vector2<float> (m/s)
+    uint32_t sd_ground_speed_x = (uint32_t)(sd_ground_speed_vec.x * 100.0);  // cm/s
+    uint32_t sd_ground_speed_y = (uint32_t)(sd_ground_speed_vec.y * 100.0);  // cm/s
+    uint32_t sd_ground_speed = (uint32_t)(sqrtf(powf(sd_ground_speed_x, 2) + powf(sd_ground_speed_y, 2)));
 
-    Vector2f sd_ground_speed = ahrs.groundspeed_vector();  // m/s
-    Vector3f sd_wind = ahrs.wind_estimate();
+    // ==============================================================================================================
+    // CHECK FOR DATA THRESHOLDS
+    // ==============================================================================================================
+    bool gs_exceed = std::abs(gps_ground_speed - sd_ground_speed) > THRESHOLD_GS_CM;
+    bool vx_exceed = std::abs(gps_velocity_x - sd_velocity_x) > THRESHOLD_VX_CM;
+    bool vy_exceed = std::abs(gps_velocity_y - sd_velocity_y) > THRESHOLD_VY_CM;
+    bool vz_exceed = std::abs(gps_velocity_z - sd_velocity_z) > THRESHOLD_VZ_CM;
 
-//    uint32_t time_ms = AP_HAL::millis();
-
-    gcs().send_text(MAV_SEVERITY_INFO, "SD0[%lu] GSX: %f; GSY: %f", time_ms, sd_ground_speed.x, sd_ground_speed.y);
-    gcs().send_text(MAV_SEVERITY_INFO, "SD1[%lu] AS: %f; VX: %f", time_ms, sd_airspeed, sd_velocity.x);
-    gcs().send_text(MAV_SEVERITY_INFO, "SD2[%lu] VY: %f; VZ: %f", time_ms, sd_velocity.y, sd_velocity.z);
-    gcs().send_text(MAV_SEVERITY_INFO, "SD3[%lu] WX: %f; WY: %f", time_ms, sd_wind.x, sd_wind.y);
-    gcs().send_text(MAV_SEVERITY_INFO, "SD4[%lu] WZ: %f; PHX: %f", time_ms, sd_wind.z, sd_pos_rel_home.x);
-    gcs().send_text(MAV_SEVERITY_INFO, "SD5[%lu] PHY: %f; PHZ: %f", time_ms, sd_pos_rel_home.y, sd_pos_rel_home.z);
+    if (gs_exceed || vx_exceed || vy_exceed || vz_exceed) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "SPF[%lu] GS: %d; VX: %d; VY: %d; VZ: %d", time_ms, gs_exceed, vx_exceed, vy_exceed, vz_exceed);
+    }
 }
+
+//void Copter::send_data_over_mavlink()
+//{
+//    // GPS DATA
+//
+//    uint32_t gps_ground_speed = gps.ground_speed_cm();  // cm/s
+//    float gps_ground_course = gps.ground_course(); // deg
+//    uint8_t gps_sat_count = gps.num_sats();
+//    const Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
+//
+//    uint32_t time_ms = AP_HAL::millis();
+//
+//    gcs().send_text(MAV_SEVERITY_INFO, "GPS0[%lu] GS: %lu; GC: %f", time_ms, gps_ground_speed, gps_ground_course);
+//    gcs().send_text(MAV_SEVERITY_INFO, "GPS1[%lu] SC: %u; VX: %f", time_ms, gps_sat_count, gps_velocity.x);
+//    gcs().send_text(MAV_SEVERITY_INFO, "GPS2[%lu] VY: %f; VZ: %f", time_ms, gps_velocity.y, gps_velocity.z);
+//
+//    // SENSOR DATA
+//
+//    float sd_airspeed;
+//    Vector3f sd_velocity;
+//    Vector3f sd_pos_rel_home;
+//
+//    ahrs.airspeed_estimate(&sd_airspeed);
+//    ahrs.get_velocity_NED(sd_velocity);  // m/s
+//    ahrs.get_relative_position_NED_home(sd_pos_rel_home);
+//
+//    Vector2f sd_ground_speed = ahrs.groundspeed_vector();  // m/s
+//    Vector3f sd_wind = ahrs.wind_estimate();
+//
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD0[%lu] GSX: %f; GSY: %f", time_ms, sd_ground_speed.x, sd_ground_speed.y);
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD1[%lu] AS: %f; VX: %f", time_ms, sd_airspeed, sd_velocity.x);
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD2[%lu] VY: %f; VZ: %f", time_ms, sd_velocity.y, sd_velocity.z);
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD3[%lu] WX: %f; WY: %f", time_ms, sd_wind.x, sd_wind.y);
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD4[%lu] WZ: %f; PHX: %f", time_ms, sd_wind.z, sd_pos_rel_home.x);
+//    gcs().send_text(MAV_SEVERITY_INFO, "SD5[%lu] PHY: %f; PHZ: %f", time_ms, sd_pos_rel_home.y, sd_pos_rel_home.z);
+//}
 
 
 // rc_loops - reads user input from transmitter/receiver
