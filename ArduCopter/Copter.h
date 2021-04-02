@@ -192,22 +192,7 @@
 #endif
 
 #include "mode.h"
-
-#ifndef THRESHOLD_GS_CM
-#define THRESHOLD_GS_CM 133
-#endif
-
-#ifndef THRESHOLD_VX_CM
-#define THRESHOLD_VX_CM 151
-#endif
-
-#ifndef THRESHOLD_VY_CM
-#define THRESHOLD_VY_CM 65
-#endif
-
-#ifndef THRESHOLD_VZ_CM
-#define THRESHOLD_VZ_CM 7
-#endif
+#include "Defender.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -284,6 +269,8 @@ private:
     RC_Channel *channel_yaw;
 
     AP_Logger logger;
+
+    Defender defender;
 
     // flight modes convenience array
     AP_Int8 *flight_modes;
@@ -691,6 +678,8 @@ private:
     void update_altitude();
 
     void data_loop();
+    void spoofing_loop();
+    void ekf_loop();
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);

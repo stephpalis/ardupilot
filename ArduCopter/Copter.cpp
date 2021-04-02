@@ -76,10 +76,12 @@
 #include "Copter.h"
 
 #define FORCE_VERSION_H_INCLUDE
+
 #include "version.h"
+
 #undef FORCE_VERSION_H_INCLUDE
 
-const AP_HAL::HAL& hal = AP_HAL::get_HAL();
+const AP_HAL::HAL &hal = AP_HAL::get_HAL();
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Copter, &copter, func, rate_hz, max_time_micros)
 
@@ -89,131 +91,133 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
   and the maximum time they are expected to take (in microseconds)
  */
 const AP_Scheduler::Task Copter::scheduler_tasks[] = {
-    SCHED_TASK(rc_loop,              100,    130),
-    SCHED_TASK(throttle_loop,         50,     75),
-    SCHED_TASK(update_GPS,            50,    200),
-    SCHED_TASK(data_loop,            3,    500),
+        SCHED_TASK(rc_loop, 100, 130),
+        SCHED_TASK(throttle_loop, 50, 75),
+        SCHED_TASK(update_GPS, 50, 200),
+        SCHED_TASK(ekf_loop, 1, 150),
+        SCHED_TASK(data_loop, 2, 450),
+//        SCHED_TASK(data_loop, 3, 500),
+//        SCHED_TASK(spoofing_loop, 1, 300),
 #if OPTFLOW == ENABLED
-    SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
+        SCHED_TASK_CLASS(OpticalFlow, &copter.optflow, update, 200, 160),
 #endif
-    SCHED_TASK(update_batt_compass,   10,    120),
-    SCHED_TASK_CLASS(RC_Channels,          (RC_Channels*)&copter.g2.rc_channels,      read_aux_all,    10,     50),
-    SCHED_TASK(arm_motors_check,      10,     50),
+        SCHED_TASK(update_batt_compass, 10, 120),
+        SCHED_TASK_CLASS(RC_Channels, (RC_Channels * ) & copter.g2.rc_channels, read_aux_all, 10, 50),
+        SCHED_TASK(arm_motors_check, 10, 50),
 #if TOY_MODE_ENABLED == ENABLED
-    SCHED_TASK_CLASS(ToyMode,              &copter.g2.toy_mode,         update,          10,  50),
+        SCHED_TASK_CLASS(ToyMode,              &copter.g2.toy_mode,         update,          10,  50),
 #endif
-    SCHED_TASK(auto_disarm_check,     10,     50),
-    SCHED_TASK(auto_trim,             10,     75),
+        SCHED_TASK(auto_disarm_check, 10, 50),
+        SCHED_TASK(auto_trim, 10, 75),
 #if RANGEFINDER_ENABLED == ENABLED
-    SCHED_TASK(read_rangefinder,      20,    100),
+        SCHED_TASK(read_rangefinder, 20, 100),
 #endif
 #if PROXIMITY_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Proximity,         &copter.g2.proximity,        update,         200,  50),
+        SCHED_TASK_CLASS(AP_Proximity, &copter.g2.proximity, update, 200, 50),
 #endif
 #if BEACON_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Beacon,            &copter.g2.beacon,           update,         400,  50),
+        SCHED_TASK_CLASS(AP_Beacon, &copter.g2.beacon, update, 400, 50),
 #endif
 #if VISUAL_ODOMETRY_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_VisualOdom,       &copter.g2.visual_odom,        update,         400,  50),
+        SCHED_TASK_CLASS(AP_VisualOdom, &copter.g2.visual_odom, update, 400, 50),
 #endif
-    SCHED_TASK(update_altitude,       10,    100),
-    SCHED_TASK(run_nav_updates,       50,    100),
-    SCHED_TASK(update_throttle_hover,100,     90),
+        SCHED_TASK(update_altitude, 10, 100),
+        SCHED_TASK(run_nav_updates, 50, 100),
+        SCHED_TASK(update_throttle_hover, 100, 90),
 #if MODE_SMARTRTL_ENABLED == ENABLED
-    SCHED_TASK_CLASS(ModeSmartRTL, &copter.mode_smartrtl,       save_position,    3, 100),
+        SCHED_TASK_CLASS(ModeSmartRTL, &copter.mode_smartrtl, save_position, 3, 100),
 #endif
 #if SPRAYER_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AC_Sprayer,           &copter.sprayer,             update,           3,  90),
+        SCHED_TASK_CLASS(AC_Sprayer, &copter.sprayer, update, 3, 90),
 #endif
-    SCHED_TASK(three_hz_loop,          3,     75),
-    SCHED_TASK_CLASS(AP_ServoRelayEvents,  &copter.ServoRelayEvents,      update_events, 50,     75),
-    SCHED_TASK_CLASS(AP_Baro,              &copter.barometer,           accumulate,      50,  90),
+        SCHED_TASK(three_hz_loop, 3, 75),
+        SCHED_TASK_CLASS(AP_ServoRelayEvents, &copter.ServoRelayEvents, update_events, 50, 75),
+        SCHED_TASK_CLASS(AP_Baro, &copter.barometer, accumulate, 50, 90),
 #if AC_FENCE == ENABLED
-    SCHED_TASK_CLASS(AC_Fence,             &copter.fence,               update,          10, 100),
+        SCHED_TASK_CLASS(AC_Fence, &copter.fence, update, 10, 100),
 #endif
 #if PRECISION_LANDING == ENABLED
-    SCHED_TASK(update_precland,      400,     50),
+        SCHED_TASK(update_precland, 400, 50),
 #endif
 #if FRAME_CONFIG == HELI_FRAME
-    SCHED_TASK(check_dynamic_flight,  50,     75),
+        SCHED_TASK(check_dynamic_flight,  50,     75),
 #endif
 #if LOGGING_ENABLED == ENABLED
-    SCHED_TASK(fourhundred_hz_logging,400,    50),
+        SCHED_TASK(fourhundred_hz_logging, 400, 50),
 #endif
-    SCHED_TASK_CLASS(AP_Notify,            &copter.notify,              update,          50,  90),
-    SCHED_TASK(one_hz_loop,            1,    100),
-    SCHED_TASK(ekf_check,             10,     75),
-    SCHED_TASK(check_vibration,       10,     50),
-    SCHED_TASK(gpsglitch_check,       10,     50),
-    SCHED_TASK(landinggear_update,    10,     75),
-    SCHED_TASK(standby_update,        100,    75),
-    SCHED_TASK(lost_vehicle_check,    10,     50),
-    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_receive, 400, 180),
-    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_send,    400, 550),
+        SCHED_TASK_CLASS(AP_Notify, &copter.notify, update, 50, 90),
+        SCHED_TASK(one_hz_loop, 1, 100),
+        SCHED_TASK(ekf_check, 10, 75),
+        SCHED_TASK(check_vibration, 10, 50),
+        SCHED_TASK(gpsglitch_check, 10, 50),
+        SCHED_TASK(landinggear_update, 10, 75),
+        SCHED_TASK(standby_update, 100, 75),
+        SCHED_TASK(lost_vehicle_check, 10, 50),
+        SCHED_TASK_CLASS(GCS, (GCS * ) & copter._gcs, update_receive, 400, 180),
+        SCHED_TASK_CLASS(GCS, (GCS * ) & copter._gcs, update_send, 400, 550),
 #if MOUNT == ENABLED
-    SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          50,  75),
+        SCHED_TASK_CLASS(AP_Mount, &copter.camera_mount, update, 50, 75),
 #endif
 #if CAMERA == ENABLED
-    SCHED_TASK_CLASS(AP_Camera,            &copter.camera,              update_trigger,  50,  75),
+        SCHED_TASK_CLASS(AP_Camera, &copter.camera, update_trigger, 50, 75),
 #endif
 #if LOGGING_ENABLED == ENABLED
-    SCHED_TASK(ten_hz_logging_loop,   10,    350),
-    SCHED_TASK(twentyfive_hz_logging, 25,    110),
-    SCHED_TASK_CLASS(AP_Logger,      &copter.logger,           periodic_tasks, 400, 300),
+        SCHED_TASK(ten_hz_logging_loop, 10, 350),
+        SCHED_TASK(twentyfive_hz_logging, 25, 110),
+        SCHED_TASK_CLASS(AP_Logger, &copter.logger, periodic_tasks, 400, 300),
 #endif
-    SCHED_TASK_CLASS(AP_InertialSensor,    &copter.ins,                 periodic,       400,  50),
-    SCHED_TASK_CLASS(AP_Scheduler,         &copter.scheduler,           update_logging, 0.1,  75),
+        SCHED_TASK_CLASS(AP_InertialSensor, &copter.ins, periodic, 400, 50),
+        SCHED_TASK_CLASS(AP_Scheduler, &copter.scheduler, update_logging, 0.1, 75),
 #if RPM_ENABLED == ENABLED
-    SCHED_TASK(rpm_update,            40,    200),
+        SCHED_TASK(rpm_update, 40, 200),
 #endif
-    SCHED_TASK(compass_cal_update,   100,    100),
-    SCHED_TASK(accel_cal_update,      10,    100),
-    SCHED_TASK_CLASS(AP_TempCalibration,   &copter.g2.temp_calibration, update,          10, 100),
+        SCHED_TASK(compass_cal_update, 100, 100),
+        SCHED_TASK(accel_cal_update, 10, 100),
+        SCHED_TASK_CLASS(AP_TempCalibration, &copter.g2.temp_calibration, update, 10, 100),
 #if ADSB_ENABLED == ENABLED
-    SCHED_TASK(avoidance_adsb_update, 10,    100),
+        SCHED_TASK(avoidance_adsb_update, 10, 100),
 #endif
 #if ADVANCED_FAILSAFE == ENABLED
-    SCHED_TASK(afs_fs_check,          10,    100),
+        SCHED_TASK(afs_fs_check,          10,    100),
 #endif
 #if AC_TERRAIN == ENABLED
-    SCHED_TASK(terrain_update,        10,    100),
+        SCHED_TASK(terrain_update, 10, 100),
 #endif
 #if GRIPPER_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Gripper,           &copter.g2.gripper,          update,          10,  75),
+        SCHED_TASK_CLASS(AP_Gripper, &copter.g2.gripper, update, 10, 75),
 #endif
 #if WINCH_ENABLED == ENABLED
-    SCHED_TASK(winch_update,          10,     50),
+        SCHED_TASK(winch_update,          10,     50),
 #endif
 #ifdef USERHOOK_FASTLOOP
-    SCHED_TASK(userhook_FastLoop,    100,     75),
+        SCHED_TASK(userhook_FastLoop,    100,     75),
 #endif
 #ifdef USERHOOK_50HZLOOP
-    SCHED_TASK(userhook_50Hz,         50,     75),
+        SCHED_TASK(userhook_50Hz,         50,     75),
 #endif
 #ifdef USERHOOK_MEDIUMLOOP
-    SCHED_TASK(userhook_MediumLoop,   10,     75),
+        SCHED_TASK(userhook_MediumLoop,   10,     75),
 #endif
 #ifdef USERHOOK_SLOWLOOP
-    SCHED_TASK(userhook_SlowLoop,     3.3,    75),
+        SCHED_TASK(userhook_SlowLoop,     3.3,    75),
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    SCHED_TASK(userhook_SuperSlowLoop, 1,   75),
+        SCHED_TASK(userhook_SuperSlowLoop, 1,   75),
 #endif
 #if BUTTON_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Button,            &copter.g2.button,           update,           5, 100),
+        SCHED_TASK_CLASS(AP_Button, &copter.g2.button, update, 5, 100),
 #endif
 #if STATS_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100),
+        SCHED_TASK_CLASS(AP_Stats, &copter.g2.stats, update, 1, 100),
 #endif
 #if OSD_ENABLED == ENABLED
-    SCHED_TASK(publish_osd_info, 1, 10),
+        SCHED_TASK(publish_osd_info, 1, 10),
 #endif
 };
 
 constexpr int8_t Copter::_failsafe_priorities[7];
 
-void Copter::setup()
-{
+void Copter::setup() {
     // Load the default values of variables listed in var_info[]s
     AP_Param::setup_sketch_defaults();
 
@@ -225,16 +229,14 @@ void Copter::setup()
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
 }
 
-void Copter::loop()
-{
+void Copter::loop() {
     scheduler.loop();
     G_Dt = scheduler.get_last_loop_time_s();
 }
 
 
 // Main loop - 400hz
-void Copter::fast_loop()
-{
+void Copter::fast_loop() {
     // update INS immediately to get current gyro data populated
     ins.update();
 
@@ -250,9 +252,9 @@ void Copter::fast_loop()
 
 #if FRAME_CONFIG == HELI_FRAME
     update_heli_control_dynamics();
-    #if MODE_AUTOROTATE_ENABLED == ENABLED
+#if MODE_AUTOROTATE_ENABLED == ENABLED
         heli_update_autorotation();
-    #endif
+#endif
 #endif //HELI_FRAME
 
     // Inertial Nav
@@ -282,44 +284,47 @@ void Copter::fast_loop()
     }
 }
 
-void Copter::data_loop()
-{
+void Copter::ekf_loop() {
     // ==============================================================================================================
     // EKF
     // ==============================================================================================================
 
     // inhibit EKF from fusing GPS data for corrections
     if (!ahrs.getInhibitGPS()) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
-        uint8_t resp = ahrs.setInhibitGPS();
-
-        switch (resp) {
-            case 0:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
-                break;
-            case 1:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
-                break;
-            case 2:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
-                break;
-            default:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
-        }
+        ahrs.setInhibitGPS();
     }
 
-    uint32_t time_ms = AP_HAL::millis();
+//        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
+//        uint8_t resp = ahrs.setInhibitGPS();
+//
+//        switch (resp) {
+//            case 0:
+//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
+//                break;
+//            case 1:
+//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
+//                break;
+//            case 2:
+//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
+//                break;
+//            default:
+//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
+//        }
+//    }
+}
 
+void Copter::data_loop() {
     // ==============================================================================================================
     // GPS DATA
     // ==============================================================================================================
 
-    uint32_t gps_ground_speed = gps.ground_speed_cm();  // cm/s
+    uint8_t gps_sat_count = gps.num_sats();
+    int16_t gps_ground_speed = (int16_t) gps.ground_speed_cm();  // cm/s
 
     Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
-    uint32_t gps_velocity_x = (uint32_t)(gps_velocity.x * 100.0);  // cm/s
-    uint32_t gps_velocity_y = (uint32_t)(gps_velocity.y * 100.0);  // cm/s
-    uint32_t gps_velocity_z = (uint32_t)(gps_velocity.z * 100.0);  // cm/s
+    int16_t gps_velocity_x = (int16_t)(gps_velocity.x * 100);  // cm/s
+    int16_t gps_velocity_y = (int16_t)(gps_velocity.y * 100);  // cm/s
+    int16_t gps_velocity_z = (int16_t)(gps_velocity.z * 100);  // cm/s
 
     // ==============================================================================================================
     // SENSOR DATA
@@ -327,27 +332,50 @@ void Copter::data_loop()
 
     Vector3f sd_velocity;  // Vector3<float> (m/s)
     ahrs.get_velocity_NED(sd_velocity);  // cm/s
-    uint32_t sd_velocity_x = (uint32_t)(sd_velocity.x * 100.0);  // cm/s
-    uint32_t sd_velocity_y = (uint32_t)(sd_velocity.y * 100.0);  // cm/s
-    uint32_t sd_velocity_z = (uint32_t)(sd_velocity.z * 100.0);  // cm/s
+    int16_t sd_velocity_x = (int16_t)(sd_velocity.x * 100);  // cm/s
+    int16_t sd_velocity_y = (int16_t)(sd_velocity.y * 100);  // cm/s
+    int16_t sd_velocity_z = (int16_t)(sd_velocity.z * 100);  // cm/s
 
     Vector2f sd_ground_speed_vec = ahrs.groundspeed_vector();  // Vector2<float> (m/s)
-    uint32_t sd_ground_speed_x = (uint32_t)(sd_ground_speed_vec.x * 100.0);  // cm/s
-    uint32_t sd_ground_speed_y = (uint32_t)(sd_ground_speed_vec.y * 100.0);  // cm/s
-    uint32_t sd_ground_speed = (uint32_t)(sqrtf(powf(sd_ground_speed_x, 2) + powf(sd_ground_speed_y, 2)));
+    int16_t sd_ground_speed_x = (int16_t)(sd_ground_speed_vec.x * 100);  // cm/s
+    int16_t sd_ground_speed_y = (int16_t)(sd_ground_speed_vec.y * 100);  // cm/s
+    int16_t sd_ground_speed = (int16_t)(sqrtf(powf(sd_ground_speed_x, 2) + powf(sd_ground_speed_y, 2)));
 
     // ==============================================================================================================
     // CHECK FOR DATA THRESHOLDS
     // ==============================================================================================================
-    bool gs_exceed = std::abs(gps_ground_speed - sd_ground_speed) > THRESHOLD_GS_CM;
-    bool vx_exceed = std::abs(gps_velocity_x - sd_velocity_x) > THRESHOLD_VX_CM;
-    bool vy_exceed = std::abs(gps_velocity_y - sd_velocity_y) > THRESHOLD_VY_CM;
-    bool vz_exceed = std::abs(gps_velocity_z - sd_velocity_z) > THRESHOLD_VZ_CM;
 
-    if (gs_exceed || vx_exceed || vy_exceed || vz_exceed) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "SPF[%lu] GS: %d; VX: %d; VY: %d; VZ: %d", time_ms, gs_exceed, vx_exceed, vy_exceed, vz_exceed);
+//    defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z);
+//    defender.set_sensor_state(sd_ground_speed, sd_velocity_x, sd_velocity_y, sd_velocity_z);
+
+    uint32_t time_ms = AP_HAL::millis();
+
+    // gs, vx, vy, vz
+    gcs().send_text(MAV_SEVERITY_INFO, "S0[%lu]%d;%d;%d;%d", time_ms, sd_ground_speed, sd_velocity_x, sd_velocity_y,
+                    sd_velocity_z);
+
+    // gs, sc, vx, vy, vz
+    gcs().send_text(MAV_SEVERITY_INFO, "G0[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
+                    gps_velocity_x, gps_velocity_y, gps_velocity_z);
+}
+
+/**
+ * TODO
+ */
+void Copter::spoofing_loop() {
+    if (defender.is_spoofing_detected()) {
+        uint32_t time_ms = AP_HAL::millis();
+        gcs().send_text(MAV_SEVERITY_CRITICAL,
+                        "SPF[%lu] GS: %d; VX: %d; VY: %d; VZ: %d",
+                        time_ms,
+                        defender.is_ground_speed_threshold_exceeded(),
+                        defender.is_velocity_x_threshold_exceeded(),
+                        defender.is_velocity_y_threshold_exceeded(),
+                        defender.is_velocity_z_threshold_exceeded()
+        );
     }
 }
+
 
 //void Copter::send_data_over_mavlink()
 //{
@@ -388,8 +416,7 @@ void Copter::data_loop()
 
 // rc_loops - reads user input from transmitter/receiver
 // called at 100hz
-void Copter::rc_loop()
-{
+void Copter::rc_loop() {
     // Read radio and 3-position switch on radio
     // -----------------------------------------
     read_radio();
@@ -398,8 +425,7 @@ void Copter::rc_loop()
 
 // throttle_loop - should be run at 50 hz
 // ---------------------------
-void Copter::throttle_loop()
-{
+void Copter::throttle_loop() {
     // update throttle_low_comp value (controls priority of throttle vs attitude control)
     update_throttle_mix();
 
@@ -422,12 +448,11 @@ void Copter::throttle_loop()
 
 // update_batt_compass - read battery and compass
 // should be called at 10hz
-void Copter::update_batt_compass(void)
-{
+void Copter::update_batt_compass(void) {
     // read battery before compass because it may be used for motor interference compensation
     battery.read();
 
-    if(AP::compass().enabled()) {
+    if (AP::compass().enabled()) {
         // update compass with throttle value - used for compassmot
         compass.set_throttle(motors->get_throttle());
         compass.set_voltage(battery.voltage());
@@ -437,8 +462,7 @@ void Copter::update_batt_compass(void)
 
 // Full rate logging of attitude, rate and pid loops
 // should be run at 400hz
-void Copter::fourhundred_hz_logging()
-{
+void Copter::fourhundred_hz_logging() {
     if (should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
         Log_Write_Attitude();
     }
@@ -446,10 +470,10 @@ void Copter::fourhundred_hz_logging()
 
 // ten_hz_logging_loop
 // should be run at 10hz
-void Copter::ten_hz_logging_loop()
-{
+void Copter::ten_hz_logging_loop() {
     // log attitude data if we're not already logging at the higher rate
-    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
+    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_ATTITUDE_FAST) &&
+        !copter.flightmode->logs_attitude()) {
         Log_Write_Attitude();
     }
     // log EKF attitude data
@@ -489,8 +513,7 @@ void Copter::ten_hz_logging_loop()
 }
 
 // twentyfive_hz_logging - should be run at 25hz
-void Copter::twentyfive_hz_logging()
-{
+void Copter::twentyfive_hz_logging() {
 #if HIL_MODE != HIL_MODE_DISABLED
     // HIL for a copter needs very fast update of the servo values
     gcs().send_message(MSG_SERVO_OUTPUT_RAW);
@@ -520,8 +543,7 @@ void Copter::twentyfive_hz_logging()
 }
 
 // three_hz_loop - 3.3hz loop
-void Copter::three_hz_loop()
-{
+void Copter::three_hz_loop() {
     // check if we've lost contact with the ground station
     failsafe_gcs_check();
 
@@ -539,8 +561,7 @@ void Copter::three_hz_loop()
 }
 
 // one_hz_loop - runs at 1Hz
-void Copter::one_hz_loop()
-{
+void Copter::one_hz_loop() {
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);
     }
@@ -554,7 +575,8 @@ void Copter::one_hz_loop()
         update_using_interlock();
 
         // check the user hasn't updated the frame class or type
-        motors->set_frame_class_and_type((AP_Motors::motor_frame_class)g2.frame_class.get(), (AP_Motors::motor_frame_type)g.frame_type.get());
+        motors->set_frame_class_and_type((AP_Motors::motor_frame_class) g2.frame_class.get(),
+                                         (AP_Motors::motor_frame_type) g.frame_type.get());
 
 #if FRAME_CONFIG != HELI_FRAME
         // set all throttle channel settings
@@ -576,15 +598,14 @@ void Copter::one_hz_loop()
 }
 
 // called at 50hz
-void Copter::update_GPS(void)
-{
+void Copter::update_GPS(void) {
     static uint32_t last_gps_reading[GPS_MAX_INSTANCES];   // time of last gps message
     bool gps_updated = false;
 
     gps.update();
 
     // log after every gps message
-    for (uint8_t i=0; i<gps.num_sensors(); i++) {
+    for (uint8_t i = 0; i < gps.num_sensors(); i++) {
         if (gps.last_message_time_ms(i) != last_gps_reading[i]) {
             last_gps_reading[i] = gps.last_message_time_ms(i);
             gps_updated = true;
@@ -599,14 +620,13 @@ void Copter::update_GPS(void)
     }
 }
 
-void Copter::init_simple_bearing()
-{
+void Copter::init_simple_bearing() {
     // capture current cos_yaw and sin_yaw values
     simple_cos_yaw = ahrs.cos_yaw();
     simple_sin_yaw = ahrs.sin_yaw();
 
     // initialise super simple heading (i.e. heading towards home) to be 180 deg from simple mode heading
-    super_simple_last_bearing = wrap_360_cd(ahrs.yaw_sensor+18000);
+    super_simple_last_bearing = wrap_360_cd(ahrs.yaw_sensor + 18000);
     super_simple_cos_yaw = simple_cos_yaw;
     super_simple_sin_yaw = simple_sin_yaw;
 
@@ -617,8 +637,7 @@ void Copter::init_simple_bearing()
 }
 
 // update_simple_mode - rotates pilot input if we are in simple mode
-void Copter::update_simple_mode(void)
-{
+void Copter::update_simple_mode(void) {
     float rollx, pitchx;
 
     // exit immediately if no new radio frame or not in simple mode
@@ -631,23 +650,24 @@ void Copter::update_simple_mode(void)
 
     if (ap.simple_mode == 1) {
         // rotate roll, pitch input by -initial simple heading (i.e. north facing)
-        rollx = channel_roll->get_control_in()*simple_cos_yaw - channel_pitch->get_control_in()*simple_sin_yaw;
-        pitchx = channel_roll->get_control_in()*simple_sin_yaw + channel_pitch->get_control_in()*simple_cos_yaw;
-    }else{
+        rollx = channel_roll->get_control_in() * simple_cos_yaw - channel_pitch->get_control_in() * simple_sin_yaw;
+        pitchx = channel_roll->get_control_in() * simple_sin_yaw + channel_pitch->get_control_in() * simple_cos_yaw;
+    } else {
         // rotate roll, pitch input by -super simple heading (reverse of heading to home)
-        rollx = channel_roll->get_control_in()*super_simple_cos_yaw - channel_pitch->get_control_in()*super_simple_sin_yaw;
-        pitchx = channel_roll->get_control_in()*super_simple_sin_yaw + channel_pitch->get_control_in()*super_simple_cos_yaw;
+        rollx = channel_roll->get_control_in() * super_simple_cos_yaw -
+                channel_pitch->get_control_in() * super_simple_sin_yaw;
+        pitchx = channel_roll->get_control_in() * super_simple_sin_yaw +
+                 channel_pitch->get_control_in() * super_simple_cos_yaw;
     }
 
     // rotate roll, pitch input from north facing to vehicle's perspective
-    channel_roll->set_control_in(rollx*ahrs.cos_yaw() + pitchx*ahrs.sin_yaw());
-    channel_pitch->set_control_in(-rollx*ahrs.sin_yaw() + pitchx*ahrs.cos_yaw());
+    channel_roll->set_control_in(rollx * ahrs.cos_yaw() + pitchx * ahrs.sin_yaw());
+    channel_pitch->set_control_in(-rollx * ahrs.sin_yaw() + pitchx * ahrs.cos_yaw());
 }
 
 // update_super_simple_bearing - adjusts simple bearing based on location
 // should be called after home_bearing has been updated
-void Copter::update_super_simple_bearing(bool force_update)
-{
+void Copter::update_super_simple_bearing(bool force_update) {
     if (!force_update) {
         if (ap.simple_mode != 2) {
             return;
@@ -665,13 +685,12 @@ void Copter::update_super_simple_bearing(bool force_update)
     }
 
     super_simple_last_bearing = bearing;
-    const float angle_rad = radians((super_simple_last_bearing+18000)/100);
+    const float angle_rad = radians((super_simple_last_bearing + 18000) / 100);
     super_simple_cos_yaw = cosf(angle_rad);
     super_simple_sin_yaw = sinf(angle_rad);
 }
 
-void Copter::read_AHRS(void)
-{
+void Copter::read_AHRS(void) {
     // Perform IMU calculations and get attitude info
     //-----------------------------------------------
 #if HIL_MODE != HIL_MODE_DISABLED
@@ -684,8 +703,7 @@ void Copter::read_AHRS(void)
 }
 
 // read baro and log control tuning
-void Copter::update_altitude()
-{
+void Copter::update_altitude() {
     // read in baro altitude
     read_barometer();
 
@@ -710,17 +728,16 @@ void Copter::publish_osd_info()
   constructor for main Copter class
  */
 Copter::Copter(void)
-    : logger(g.log_bitmask),
-    flight_modes(&g.flight_mode1),
-    control_mode(Mode::Number::STABILIZE),
-    simple_cos_yaw(1.0f),
-    super_simple_cos_yaw(1.0),
-    land_accel_ef_filter(LAND_DETECTOR_ACCEL_LPF_CUTOFF),
-    rc_throttle_control_in_filter(1.0f),
-    inertial_nav(ahrs),
-    param_loader(var_info),
-    flightmode(&mode_stabilize)
-{
+        : logger(g.log_bitmask),
+          flight_modes(&g.flight_mode1),
+          control_mode(Mode::Number::STABILIZE),
+          simple_cos_yaw(1.0f),
+          super_simple_cos_yaw(1.0),
+          land_accel_ef_filter(LAND_DETECTOR_ACCEL_LPF_CUTOFF),
+          rc_throttle_control_in_filter(1.0f),
+          inertial_nav(ahrs),
+          param_loader(var_info),
+          flightmode(&mode_stabilize) {
     // init sensor error logging flags
     sensor_health.baro = true;
     sensor_health.compass = true;
