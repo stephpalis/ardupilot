@@ -94,10 +94,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
         SCHED_TASK(rc_loop, 100, 130),
         SCHED_TASK(throttle_loop, 50, 75),
         SCHED_TASK(update_GPS, 50, 200),
-        SCHED_TASK(ekf_loop, 1, 150),
+        SCHED_TASK(ekf_loop, 1, 300),
         SCHED_TASK(data_loop, 2, 450),
-//        SCHED_TASK(data_loop, 3, 500),
-//        SCHED_TASK(spoofing_loop, 1, 300),
+        SCHED_TASK(spoofing_loop, 1, 450),
 #if OPTFLOW == ENABLED
         SCHED_TASK_CLASS(OpticalFlow, &copter.optflow, update, 200, 160),
 #endif
@@ -292,25 +291,24 @@ void Copter::ekf_loop() {
     // inhibit EKF from fusing GPS data for corrections
     if (!ahrs.getInhibitGPS()) {
         ahrs.setInhibitGPS();
-    }
 
-//        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
-//        uint8_t resp = ahrs.setInhibitGPS();
-//
-//        switch (resp) {
-//            case 0:
-//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
-//                break;
-//            case 1:
-//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
-//                break;
-//            case 2:
-//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
-//                break;
-//            default:
-//                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
-//        }
-//    }
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
+        uint8_t resp = ahrs.setInhibitGPS();
+
+        switch (resp) {
+            case 0:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
+                break;
+            case 1:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
+                break;
+            case 2:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
+                break;
+            default:
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
+        }
+    }
 }
 
 void Copter::data_loop() {
@@ -318,7 +316,7 @@ void Copter::data_loop() {
     // GPS DATA
     // ==============================================================================================================
 
-    uint8_t gps_sat_count = gps.num_sats();
+//    uint8_t gps_sat_count = gps.num_sats();
     int16_t gps_ground_speed = (int16_t) gps.ground_speed_cm();  // cm/s
 
     Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
@@ -345,33 +343,35 @@ void Copter::data_loop() {
     // CHECK FOR DATA THRESHOLDS
     // ==============================================================================================================
 
-//    defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z);
-//    defender.set_sensor_state(sd_ground_speed, sd_velocity_x, sd_velocity_y, sd_velocity_z);
+    defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z);
+    defender.set_sensor_state(sd_ground_speed, sd_velocity_x, sd_velocity_y, sd_velocity_z);
 
-    uint32_t time_ms = AP_HAL::millis();
-
-    // gs, vx, vy, vz
-    gcs().send_text(MAV_SEVERITY_INFO, "S0[%lu]%d;%d;%d;%d", time_ms, sd_ground_speed, sd_velocity_x, sd_velocity_y,
-                    sd_velocity_z);
-
-    // gs, sc, vx, vy, vz
-    gcs().send_text(MAV_SEVERITY_INFO, "G0[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
-                    gps_velocity_x, gps_velocity_y, gps_velocity_z);
+//    uint32_t time_ms = AP_HAL::millis();
+//
+//    // gs, vx, vy, vz
+//    gcs().send_text(MAV_SEVERITY_INFO, "S0[%lu]%d;%d;%d;%d", time_ms, sd_ground_speed, sd_velocity_x, sd_velocity_y,
+//                    sd_velocity_z);
+//
+//    // gs, sc, vx, vy, vz
+//    gcs().send_text(MAV_SEVERITY_INFO, "G0[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
+//                    gps_velocity_x, gps_velocity_y, gps_velocity_z);
 }
 
 /**
  * TODO
  */
 void Copter::spoofing_loop() {
+    defender.update_spoofing_state();
+
     if (defender.is_spoofing_detected()) {
         uint32_t time_ms = AP_HAL::millis();
         gcs().send_text(MAV_SEVERITY_CRITICAL,
-                        "SPF[%lu] GS: %d; VX: %d; VY: %d; VZ: %d",
+                        "SPF[%lu]%d;%d;%d;%d",
                         time_ms,
-                        defender.is_ground_speed_threshold_exceeded(),
-                        defender.is_velocity_x_threshold_exceeded(),
-                        defender.is_velocity_y_threshold_exceeded(),
-                        defender.is_velocity_z_threshold_exceeded()
+                        defender.spoof_state.ground_speed_diff,
+                        defender.spoof_state.velocity_x_diff,
+                        defender.spoof_state.velocity_y_diff,
+                        defender.spoof_state.velocity_z_diff
         );
     }
 }

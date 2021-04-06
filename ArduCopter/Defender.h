@@ -3,24 +3,32 @@
 #include <stdio.h>
 #include <cmath>
 
+#include <AP_HAL/AP_HAL.h>
+
 #ifndef THRESHOLD_GS_CM
-#define THRESHOLD_GS_CM 133
+#define THRESHOLD_GS_CM 109
 #endif
 
 #ifndef THRESHOLD_VX_CM
-#define THRESHOLD_VX_CM 151
+#define THRESHOLD_VX_CM 115
 #endif
 
 #ifndef THRESHOLD_VY_CM
-#define THRESHOLD_VY_CM 65
+#define THRESHOLD_VY_CM 74
 #endif
 
 #ifndef THRESHOLD_VZ_CM
-#define THRESHOLD_VZ_CM 7
+#define THRESHOLD_VZ_CM 40
+#endif
+
+#ifndef THRESHOLD_SPF_SEC
+#define THRESHOLD_SPF_SEC 2
 #endif
 
 class Defender {
 public:
+    Defender();
+
     int16_t get_gps_velocity_x();
 
     int16_t get_gps_velocity_y();
@@ -53,6 +61,14 @@ public:
 
     void update_spoofing_state();
 
+    struct SpoofState {
+        int16_t ground_speed_diff;
+        int16_t velocity_x_diff;
+        int16_t velocity_y_diff;
+        int16_t velocity_z_diff;
+        uint32_t last_safe_time_ms;
+    } spoof_state;
+
 private:
     struct SensorState {
         int16_t ground_speed;
@@ -60,11 +76,4 @@ private:
         int16_t velocity_y;
         int16_t velocity_z;
     } gps_state, sensor_state;
-
-    struct SpoofState {
-        bool ground_speed_exceeded;
-        bool velocity_x_exceeded;
-        bool velocity_y_exceeded;
-        bool velocity_z_exceeded;
-    } spoof_state;
 };
