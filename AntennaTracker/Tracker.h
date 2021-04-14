@@ -102,8 +102,9 @@ private:
 // Inertial Navigation EKF
 #if AP_AHRS_NAVEKF_AVAILABLE
     NavEKF2 EKF2{&ahrs, rangefinder};
+    NavEKF2 spfEKF2{&ahrs, rangefinder};
     NavEKF3 EKF3{&ahrs, rangefinder};
-    AP_AHRS_NavEKF ahrs{EKF2, EKF3};
+    AP_AHRS_NavEKF ahrs{EKF2, spfEKF2, EKF3};
 #else
     AP_AHRS_DCM ahrs;
 #endif

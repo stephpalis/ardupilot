@@ -45,7 +45,7 @@ public:
     };
 
     // Constructor
-    AP_AHRS_NavEKF(NavEKF2 &_EKF2, NavEKF3 &_EKF3, Flags flags = FLAG_NONE);
+    AP_AHRS_NavEKF(NavEKF2 &_EKF2, NavEKF2 &_spfEKF2, NavEKF3 &_EKF3, Flags flags = FLAG_NONE);
 
     /* Do not allow copies */
     AP_AHRS_NavEKF(const AP_AHRS_NavEKF &other) = delete;
@@ -287,19 +287,25 @@ private:
     }
 
     NavEKF2 &EKF2;
+    NavEKF2 &spfEKF2;
     NavEKF3 &EKF3;
     bool _ekf2_started;
+    bool _spf_ekf2_started;
     bool _ekf3_started;
     bool _force_ekf;
-    
+
     // rotation from vehicle body to NED frame
     Matrix3f _dcm_matrix;
     Vector3f _dcm_attitude;
-    
+
+    Matrix3f _spf_dcm_matrix;
+
     Vector3f _gyro_drift;
     Vector3f _gyro_estimate;
     Vector3f _accel_ef_ekf[INS_MAX_INSTANCES];
+    Vector3f _accel_ef_spf_ekf[INS_MAX_INSTANCES];
     Vector3f _accel_ef_ekf_blended;
+    Vector3f _accel_ef_spf_ekf_blended;
     const uint16_t startup_delay_ms = 1000;
     uint32_t start_time_ms = 0;
     Flags _ekf_flags;
@@ -307,6 +313,7 @@ private:
     uint8_t ekf_type(void) const;
     void update_DCM(bool skip_ins_update);
     void update_EKF2(void);
+    void update_spfEKF2(void);
     void update_EKF3(void);
 
     // get the index of the current primary IMU

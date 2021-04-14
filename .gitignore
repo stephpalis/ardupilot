@@ -1,3 +1,5 @@
+.profile
+.sudo_as_admin_successful
 /.lock-waf*
 /.waf*
 /Tools/autotest/aircraft/Rascal/reset.xml

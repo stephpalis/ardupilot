@@ -22,4 +22,4 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 USER ardupilot
 ENV CCACHE_MAXSIZE=1G
-ENV PATH=/usr/lib/ccache:/ardupilot/Tools:${PATH}
+ENV PATH=/usr/lib/ccache:/ardupilot/Tools:/ardupilot/Tools/autotest:/ardupilot/.local/bin:${PATH}

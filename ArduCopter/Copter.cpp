@@ -94,9 +94,14 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
         SCHED_TASK(rc_loop, 100, 130),
         SCHED_TASK(throttle_loop, 50, 75),
         SCHED_TASK(update_GPS, 50, 200),
-        SCHED_TASK(ekf_loop, 1, 300),
-        SCHED_TASK(data_loop, 2, 450),
+
+        SCHED_TASK(ekf_loop, 1, 200),
+        SCHED_TASK(data_loop, 2, 500),
+
+#ifdef DEF_SEND_SPF  // send spoofing messages
         SCHED_TASK(spoofing_loop, 1, 450),
+#endif
+
 #if OPTFLOW == ENABLED
         SCHED_TASK_CLASS(OpticalFlow, &copter.optflow, update, 200, 160),
 #endif
@@ -222,8 +227,6 @@ void Copter::setup() {
 
     init_ardupilot();
 
-    ahrs.setInhibitGPS();
-
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
 }
@@ -289,24 +292,21 @@ void Copter::ekf_loop() {
     // ==============================================================================================================
 
     // inhibit EKF from fusing GPS data for corrections
-    if (!ahrs.getInhibitGPS()) {
-        ahrs.setInhibitGPS();
-
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOT Inhibiting GPS");
-        uint8_t resp = ahrs.setInhibitGPS();
+    if (!spfEKF2.getInhibitGPS()) {
+        uint8_t resp = spfEKF2.setInhibitGPS();
 
         switch (resp) {
             case 0:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Command Rejected");
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOW Inhibiting GPS Command Rejected");
                 break;
             case 1:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS ALT, VVEL, VPOS");
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOW Inhibiting GPS ALT, VVEL, VPOS");
                 break;
             case 2:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response ALT, 3DVEL, VPOS RHPOS");
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOW Inhibiting GPS Resp ALT, 3DVEL, VPOS RHPOS");
                 break;
             default:
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Inhibiting GPS Response Unknown: %u", resp);
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF NOW Inhibiting GPS Resp Unknown: %u", resp);
         }
     }
 }
@@ -315,8 +315,6 @@ void Copter::data_loop() {
     // ==============================================================================================================
     // GPS DATA
     // ==============================================================================================================
-
-//    uint8_t gps_sat_count = gps.num_sats();
     int16_t gps_ground_speed = (int16_t) gps.ground_speed_cm();  // cm/s
 
     Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
@@ -325,44 +323,63 @@ void Copter::data_loop() {
     int16_t gps_velocity_z = (int16_t)(gps_velocity.z * 100);  // cm/s
 
     // ==============================================================================================================
-    // SENSOR DATA
+    // Fused AHRS EKF2 DATA (GPS Uninhibited)
     // ==============================================================================================================
+    Vector3f f_velocity;  // Vector3<float> (m/s)
+    ahrs.get_velocity_NED(f_velocity);
+    int16_t f_velocity_x = (int16_t)(f_velocity.x * 100);  // cm/s
+    int16_t f_velocity_y = (int16_t)(f_velocity.y * 100);  // cm/s
+    int16_t f_velocity_z = (int16_t)(f_velocity.z * 100);  // cm/s
 
-    Vector3f sd_velocity;  // Vector3<float> (m/s)
-    ahrs.get_velocity_NED(sd_velocity);  // cm/s
-    int16_t sd_velocity_x = (int16_t)(sd_velocity.x * 100);  // cm/s
-    int16_t sd_velocity_y = (int16_t)(sd_velocity.y * 100);  // cm/s
-    int16_t sd_velocity_z = (int16_t)(sd_velocity.z * 100);  // cm/s
+    Vector2f f_ground_speed_vec = ahrs.groundspeed_vector();  // Vector2<float> (m/s)
+    int16_t f_ground_speed_x = (int16_t)(f_ground_speed_vec.x * 100);  // cm/s
+    int16_t f_ground_speed_y = (int16_t)(f_ground_speed_vec.y * 100);  // cm/s
+    int16_t f_ground_speed = (int16_t)(sqrtf(powf(f_ground_speed_x, 2) + powf(f_ground_speed_y, 2)));
 
-    Vector2f sd_ground_speed_vec = ahrs.groundspeed_vector();  // Vector2<float> (m/s)
-    int16_t sd_ground_speed_x = (int16_t)(sd_ground_speed_vec.x * 100);  // cm/s
-    int16_t sd_ground_speed_y = (int16_t)(sd_ground_speed_vec.y * 100);  // cm/s
-    int16_t sd_ground_speed = (int16_t)(sqrtf(powf(sd_ground_speed_x, 2) + powf(sd_ground_speed_y, 2)));
+    // ==============================================================================================================
+    // Custom EKF2 Data (GPS Inhibited)
+    // ==============================================================================================================
+    Vector3f spf_velocity;
+    spfEKF2.getVelNED(-1, spf_velocity);
 
+    int16_t spf_velocity_x = (int16_t)(spf_velocity.x * 100);  // cm/s
+    int16_t spf_velocity_y = (int16_t)(spf_velocity.y * 100);  // cm/s
+    int16_t spf_velocity_z = (int16_t)(spf_velocity.z * 100);  // cm/s
+
+    int16_t spf_ground_speed = (int16_t)(sqrtf(powf(spf_velocity_x, 2) + powf(spf_velocity_y, 2)));
+
+#ifdef DEF_SEND_SPF
     // ==============================================================================================================
     // CHECK FOR DATA THRESHOLDS
     // ==============================================================================================================
-
     defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z);
-    defender.set_sensor_state(sd_ground_speed, sd_velocity_x, sd_velocity_y, sd_velocity_z);
+    defender.set_uninhibited_state(f_ground_speed, f_velocity_x, f_velocity_y, f_velocity_z);
+    defender.set_inhibited_state(spf_ground_speed, spf_velocity_x, spf_velocity_y, spf_velocity_z);
+    defender.update_spoofing_state();
+#endif
 
-//    uint32_t time_ms = AP_HAL::millis();
-//
-//    // gs, vx, vy, vz
-//    gcs().send_text(MAV_SEVERITY_INFO, "S0[%lu]%d;%d;%d;%d", time_ms, sd_ground_speed, sd_velocity_x, sd_velocity_y,
-//                    sd_velocity_z);
-//
-//    // gs, sc, vx, vy, vz
-//    gcs().send_text(MAV_SEVERITY_INFO, "G0[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
-//                    gps_velocity_x, gps_velocity_y, gps_velocity_z);
+#ifdef DEF_SEND_DATA
+    // ==============================================================================================================
+    // SEND MAVLINK DATA MESSAGES
+    // ==============================================================================================================
+    uint32_t time_ms = AP_HAL::millis();
+    uint8_t gps_sat_count = gps.num_sats();
+
+    // Fused AHRS EKF data (GPS uninhibited)
+    gcs().send_text(MAV_SEVERITY_INFO, "U[%lu]%d;%d;%d;%d", time_ms, f_ground_speed, f_velocity_x, f_velocity_y,
+                    f_velocity_z);  // gs, vx, vy, vz
+
+    // Custom EKF data (GPS inhibited)
+    gcs().send_text(MAV_SEVERITY_INFO, "I[%lu]%d;%d;%d;%d", time_ms, spf_ground_speed, spf_velocity_x, spf_velocity_y,
+                    spf_velocity_z);  // gs, vx, vy, vz
+
+    // Raw GPS data
+    gcs().send_text(MAV_SEVERITY_INFO, "G[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
+                    gps_velocity_x, gps_velocity_y, gps_velocity_z);  // gs, sc, vx, vy, vz
+#endif
 }
 
-/**
- * TODO
- */
 void Copter::spoofing_loop() {
-    defender.update_spoofing_state();
-
     if (defender.is_spoofing_detected()) {
         uint32_t time_ms = AP_HAL::millis();
         gcs().send_text(MAV_SEVERITY_CRITICAL,
@@ -375,44 +392,6 @@ void Copter::spoofing_loop() {
         );
     }
 }
-
-
-//void Copter::send_data_over_mavlink()
-//{
-//    // GPS DATA
-//
-//    uint32_t gps_ground_speed = gps.ground_speed_cm();  // cm/s
-//    float gps_ground_course = gps.ground_course(); // deg
-//    uint8_t gps_sat_count = gps.num_sats();
-//    const Vector3f gps_velocity = gps.velocity();  // Vector3<float> (m/s)
-//
-//    uint32_t time_ms = AP_HAL::millis();
-//
-//    gcs().send_text(MAV_SEVERITY_INFO, "GPS0[%lu] GS: %lu; GC: %f", time_ms, gps_ground_speed, gps_ground_course);
-//    gcs().send_text(MAV_SEVERITY_INFO, "GPS1[%lu] SC: %u; VX: %f", time_ms, gps_sat_count, gps_velocity.x);
-//    gcs().send_text(MAV_SEVERITY_INFO, "GPS2[%lu] VY: %f; VZ: %f", time_ms, gps_velocity.y, gps_velocity.z);
-//
-//    // SENSOR DATA
-//
-//    float sd_airspeed;
-//    Vector3f sd_velocity;
-//    Vector3f sd_pos_rel_home;
-//
-//    ahrs.airspeed_estimate(&sd_airspeed);
-//    ahrs.get_velocity_NED(sd_velocity);  // m/s
-//    ahrs.get_relative_position_NED_home(sd_pos_rel_home);
-//
-//    Vector2f sd_ground_speed = ahrs.groundspeed_vector();  // m/s
-//    Vector3f sd_wind = ahrs.wind_estimate();
-//
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD0[%lu] GSX: %f; GSY: %f", time_ms, sd_ground_speed.x, sd_ground_speed.y);
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD1[%lu] AS: %f; VX: %f", time_ms, sd_airspeed, sd_velocity.x);
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD2[%lu] VY: %f; VZ: %f", time_ms, sd_velocity.y, sd_velocity.z);
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD3[%lu] WX: %f; WY: %f", time_ms, sd_wind.x, sd_wind.y);
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD4[%lu] WZ: %f; PHX: %f", time_ms, sd_wind.z, sd_pos_rel_home.x);
-//    gcs().send_text(MAV_SEVERITY_INFO, "SD5[%lu] PHY: %f; PHZ: %f", time_ms, sd_pos_rel_home.y, sd_pos_rel_home.z);
-//}
-
 
 // rc_loops - reads user input from transmitter/receiver
 // called at 100hz

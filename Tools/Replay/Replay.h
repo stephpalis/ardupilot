@@ -62,8 +62,9 @@ public:
     AP_SerialManager serial_manager;
     RangeFinder rng;
     NavEKF2 EKF2{&ahrs, rng};
+    NavEKF2 spfEKF2{&ahrs, rng};
     NavEKF3 EKF3{&ahrs, rng};
-    AP_AHRS_NavEKF ahrs{EKF2, EKF3};
+    AP_AHRS_NavEKF ahrs{EKF2, spfEKF2, EKF3};
     AP_Vehicle::FixedWing aparm;
     AP_Airspeed airspeed;
     AP_Int32 unused; // logging is magic for Replay; this is unused
