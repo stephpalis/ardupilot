@@ -390,6 +390,8 @@ void Copter::spoofing_loop() {
                         defender.spoof_state.velocity_y_diff,
                         defender.spoof_state.velocity_z_diff
         );
+
+        handle_spoofing();
     }
 }
 

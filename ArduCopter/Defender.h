@@ -5,34 +5,6 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#ifndef THRESHOLD_GS_CM
-//#define THRESHOLD_GS_CM 109
-#define THRESHOLD_GS_CM 184
-#endif
-
-#ifndef THRESHOLD_VX_CM
-//#define THRESHOLD_VX_CM 115
-#define THRESHOLD_VX_CM 190
-#endif
-
-#ifndef THRESHOLD_VY_CM
-//#define THRESHOLD_VY_CM 74
-#define THRESHOLD_VY_CM 149
-#endif
-
-#ifndef THRESHOLD_VZ_CM
-//#define THRESHOLD_VZ_CM 40
-#define THRESHOLD_VZ_CM 115
-#endif
-
-#ifndef THRESHOLD_SPF_MS
-#define THRESHOLD_SPF_MS 2000
-#endif
-
-#ifndef THRESHOLD_DIFF_COUNT
-#define THRESHOLD_DIFF_COUNT 3
-#endif
-
 // whether or not to send sensor data messages
 //#ifndef DEF_SEND_DATA
 //#define DEF_SEND_DATA
@@ -89,6 +61,23 @@ public:
     } spoof_state;
 
 private:
+//    const uint16_t THRESHOLD_ADD = 75;
+//    const uint16_t THRESHOLD_GS_CM = (109 + THRESHOLD_ADD);
+//    const uint16_t THRESHOLD_VX_CM = (115 + THRESHOLD_ADD);
+//    const uint16_t THRESHOLD_VY_CM = (74 + THRESHOLD_ADD);
+//    const uint16_t THRESHOLD_VZ_CM = (40 + THRESHOLD_ADD);
+//    const uint16_t THRESHOLD_SPF_MS = 2000;
+//    const uint16_t THRESHOLD_DIFF_COUNT = 3;
+//    const bool EXPECT_GPS_DATA = true;
+
+    const uint16_t THRESHOLD_GS_CM = 20;
+    const uint16_t THRESHOLD_VX_CM = 20;
+    const uint16_t THRESHOLD_VY_CM = 20;
+    const uint16_t THRESHOLD_VZ_CM = 20;
+    const uint16_t THRESHOLD_SPF_MS = 2000;
+    const uint16_t THRESHOLD_DIFF_COUNT = 2;
+    const bool EXPECT_GPS_DATA = false;
+
     struct SensorState {
         int16_t ground_speed;
         int16_t velocity_x;

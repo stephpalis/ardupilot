@@ -69,6 +69,31 @@ void Copter::set_failsafe_radio(bool b)
     }
 }
 
+// ---------------------------------------------
+void Copter::set_failsafe_spoofing(bool b) {
+    // only act on changes
+    // -------------------
+    if (failsafe.spoofing == b) {
+        return;
+    }
+
+    // store the value so we don't trip the gate twice
+    // -----------------------------------------------
+    failsafe.spoofing = b;
+
+    if (failsafe.spoofing) {
+        // we've detected spoofed GPS
+        // ------------------------
+        failsafe_spoofing_on_event();
+    } else {
+        // we've resolved spoofed GPS
+        // ------------------------
+        failsafe_spoofing_off_event();
+    }
+
+    // update AP_Notify
+    AP_Notify::flags.failsafe_spoofing = b;
+}
 
 // ---------------------------------------------
 void Copter::set_failsafe_gcs(bool b)

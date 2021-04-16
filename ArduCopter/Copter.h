@@ -424,10 +424,11 @@ private:
         uint8_t ekf                 : 1; // true if ekf failsafe has occurred
         uint8_t terrain             : 1; // true if the missing terrain data failsafe has occurred
         uint8_t adsb                : 1; // true if an adsb related failsafe has occurred
+        uint8_t spoofing            : 1; // true if a spoofing related failsafe has occurred
     } failsafe;
 
     bool any_failsafe_triggered() const {
-        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
+        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb || failsafe.spoofing;
     }
 
     // sensor health for logging
@@ -659,6 +660,7 @@ private:
     void set_simple_mode(uint8_t b);
     void set_failsafe_radio(bool b);
     void set_failsafe_gcs(bool b);
+    void set_failsafe_spoofing(bool b);
     void update_using_interlock();
 
     // ArduCopter.cpp
@@ -741,6 +743,8 @@ private:
     void failsafe_gcs_check();
     void failsafe_gcs_on_event(void);
     void failsafe_gcs_off_event(void);
+    void failsafe_spoofing_on_event();
+    void failsafe_spoofing_off_event();
     void failsafe_terrain_check();
     void failsafe_terrain_set_status(bool data_ok);
     void failsafe_terrain_on_event();
@@ -922,6 +926,10 @@ private:
     void userhook_auxSwitch1(uint8_t ch_flag);
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
+
+    // Spoofing
+    void handle_spoofing();
+    void clear_spoofing();
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();

@@ -114,6 +114,9 @@ void Copter::set_land_complete(bool b)
 
     // tell AHRS flying state
     ahrs.set_likely_flying(!b);
+
+    // clear any spoofing detection
+    clear_spoofing();
     
     // trigger disarm-on-land if configured
     bool disarm_on_land_configured = (g.throttle_behavior & THR_BEHAVE_DISARM_ON_LAND_DETECT) != 0;

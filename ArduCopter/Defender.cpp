@@ -130,12 +130,14 @@ bool Defender::is_spoofing_detected() {
     // ==============================================================================================================
     // CHECK FOR VALID GPS DATA
     // ==============================================================================================================
-    bool no_gps_data = (gps_state.ground_speed == 0 &&
-                        gps_state.velocity_x == 0 &&
-                        gps_state.velocity_y == 0 &&
-                        gps_state.velocity_z == 0);
-    if (no_gps_data) {
-        return false;
+    if (EXPECT_GPS_DATA) {
+        bool no_gps_data = (gps_state.ground_speed == 0 &&
+                            gps_state.velocity_x == 0 &&
+                            gps_state.velocity_y == 0 &&
+                            gps_state.velocity_z == 0);
+        if (no_gps_data) {
+            return false;
+        }
     }
 
     return true;
