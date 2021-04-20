@@ -322,6 +322,13 @@ void Copter::data_loop() {
     int16_t gps_velocity_y = (int16_t)(gps_velocity.y * 100);  // cm/s
     int16_t gps_velocity_z = (int16_t)(gps_velocity.z * 100);  // cm/s
 
+    int32_t gps_alt_raw;
+    bool is_valid_alt = gps.location().get_alt_cm(Location::AltFrame::ABSOLUTE, gps_alt_raw);  // cm
+    int16_t gps_alt = (int16_t)(gps_alt_raw);
+    if (!is_valid_alt) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Bad GPS Altitude");
+    }
+s
     // ==============================================================================================================
     // Fused AHRS EKF2 DATA (GPS Uninhibited)
     // ==============================================================================================================
@@ -336,6 +343,10 @@ void Copter::data_loop() {
     int16_t f_ground_speed_y = (int16_t)(f_ground_speed_vec.y * 100);  // cm/s
     int16_t f_ground_speed = (int16_t)(sqrtf(powf(f_ground_speed_x, 2) + powf(f_ground_speed_y, 2)));
 
+    float f_hagl;
+    ahrs.get_hagl(f_hagl);
+    int16_t f_alt = (int16_t)(f_hagl * 100);  // cm
+
     // ==============================================================================================================
     // Custom EKF2 Data (GPS Inhibited)
     // ==============================================================================================================
@@ -348,13 +359,17 @@ void Copter::data_loop() {
 
     int16_t spf_ground_speed = (int16_t)(sqrtf(powf(spf_velocity_x, 2) + powf(spf_velocity_y, 2)));
 
+    float spf_hagl;
+    spfEKF2.getHAGL(spf_hagl);
+    int16_t spf_alt = (int16_t)(spf_hagl * 100);  // cm
+
 #ifdef DEF_SEND_SPF
     // ==============================================================================================================
     // CHECK FOR DATA THRESHOLDS
     // ==============================================================================================================
-    defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z);
-    defender.set_uninhibited_state(f_ground_speed, f_velocity_x, f_velocity_y, f_velocity_z);
-    defender.set_inhibited_state(spf_ground_speed, spf_velocity_x, spf_velocity_y, spf_velocity_z);
+    defender.set_gps_state(gps_ground_speed, gps_velocity_x, gps_velocity_y, gps_velocity_z, gps_alt);
+    defender.set_uninhibited_state(f_ground_speed, f_velocity_x, f_velocity_y, f_velocity_z, f_alt);
+    defender.set_inhibited_state(spf_ground_speed, spf_velocity_x, spf_velocity_y, spf_velocity_z, spf_alt);
     defender.update_spoofing_state();
 #endif
 
@@ -366,16 +381,16 @@ void Copter::data_loop() {
     uint8_t gps_sat_count = gps.num_sats();
 
     // Fused AHRS EKF data (GPS uninhibited)
-    gcs().send_text(MAV_SEVERITY_INFO, "U[%lu]%d;%d;%d;%d", time_ms, f_ground_speed, f_velocity_x, f_velocity_y,
-                    f_velocity_z);  // gs, vx, vy, vz
+    gcs().send_text(MAV_SEVERITY_INFO, "U[%lu]%d;%d;%d;%d;%d", time_ms, f_ground_speed, f_velocity_x, f_velocity_y,
+                    f_velocity_z, f_alt);  // gs, vx, vy, vz, alt
 
     // Custom EKF data (GPS inhibited)
-    gcs().send_text(MAV_SEVERITY_INFO, "I[%lu]%d;%d;%d;%d", time_ms, spf_ground_speed, spf_velocity_x, spf_velocity_y,
-                    spf_velocity_z);  // gs, vx, vy, vz
+    gcs().send_text(MAV_SEVERITY_INFO, "I[%lu]%d;%d;%d;%d;%d", time_ms, spf_ground_speed, spf_velocity_x, spf_velocity_y,
+                    spf_velocity_z, spf_alt);  // gs, vx, vy, vz, alt
 
     // Raw GPS data
-    gcs().send_text(MAV_SEVERITY_INFO, "G[%lu]%d;%u;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
-                    gps_velocity_x, gps_velocity_y, gps_velocity_z);  // gs, sc, vx, vy, vz
+    gcs().send_text(MAV_SEVERITY_INFO, "G[%lu]%d;%u;%d;%d;%d;%d", time_ms, gps_ground_speed, gps_sat_count,
+                    gps_velocity_x, gps_velocity_y, gps_velocity_z, gps_alt);  // gs, sc, vx, vy, vz, alt
 #endif
 }
 
@@ -383,12 +398,13 @@ void Copter::spoofing_loop() {
     if (defender.is_spoofing_detected()) {
         uint32_t time_ms = AP_HAL::millis();
         gcs().send_text(MAV_SEVERITY_CRITICAL,
-                        "SPF[%lu]%d;%d;%d;%d",
+                        "SPF[%lu]%d;%d;%d;%d;%d",
                         time_ms,
                         defender.spoof_state.ground_speed_diff,
                         defender.spoof_state.velocity_x_diff,
                         defender.spoof_state.velocity_y_diff,
-                        defender.spoof_state.velocity_z_diff
+                        defender.spoof_state.velocity_z_diff,
+                        defender.spoof_state.altitude_diff
         );
 
         handle_spoofing();

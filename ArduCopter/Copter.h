@@ -930,6 +930,7 @@ private:
     // Spoofing
     void handle_spoofing();
     void clear_spoofing();
+    void init_defender();
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
