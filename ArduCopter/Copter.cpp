@@ -219,7 +219,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #endif
 };
 
-constexpr int8_t Copter::_failsafe_priorities[7];
+constexpr int8_t
+Copter::_failsafe_priorities[7];
 
 void Copter::setup() {
     // Load the default values of variables listed in var_info[]s
@@ -328,7 +329,7 @@ void Copter::data_loop() {
     if (!is_valid_alt) {
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Bad GPS Altitude");
     }
-s
+
     // ==============================================================================================================
     // Fused AHRS EKF2 DATA (GPS Uninhibited)
     // ==============================================================================================================
@@ -385,7 +386,8 @@ s
                     f_velocity_z, f_alt);  // gs, vx, vy, vz, alt
 
     // Custom EKF data (GPS inhibited)
-    gcs().send_text(MAV_SEVERITY_INFO, "I[%lu]%d;%d;%d;%d;%d", time_ms, spf_ground_speed, spf_velocity_x, spf_velocity_y,
+    gcs().send_text(MAV_SEVERITY_INFO, "I[%lu]%d;%d;%d;%d;%d", time_ms, spf_ground_speed, spf_velocity_x,
+                    spf_velocity_y,
                     spf_velocity_z, spf_alt);  // gs, vx, vy, vz, alt
 
     // Raw GPS data
