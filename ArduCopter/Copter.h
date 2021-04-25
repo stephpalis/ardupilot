@@ -24,6 +24,8 @@
 #include <cmath>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string>
+#include <sstream>
 
 #include <AP_HAL/AP_HAL.h>
 
@@ -190,6 +192,7 @@
 #endif
 
 #include "mode.h"
+#include "Defender.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -267,6 +270,8 @@ private:
 
     AP_Logger logger;
 
+    Defender defender;
+
     // flight modes convenience array
     AP_Int8 *flight_modes;
     const uint8_t num_flight_modes = 6;
@@ -320,8 +325,9 @@ private:
 
     // Inertial Navigation EKF
     NavEKF2 EKF2{&ahrs, rangefinder};
+    NavEKF2 spfEKF2{&ahrs, rangefinder};
     NavEKF3 EKF3{&ahrs, rangefinder};
-    AP_AHRS_NavEKF ahrs{EKF2, EKF3, AP_AHRS_NavEKF::FLAG_ALWAYS_USE_EKF};
+    AP_AHRS_NavEKF ahrs{EKF2, spfEKF2, EKF3, AP_AHRS_NavEKF::FLAG_ALWAYS_USE_EKF};
     AP_AHRS_View *ahrs_view;
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -418,10 +424,11 @@ private:
         uint8_t ekf                 : 1; // true if ekf failsafe has occurred
         uint8_t terrain             : 1; // true if the missing terrain data failsafe has occurred
         uint8_t adsb                : 1; // true if an adsb related failsafe has occurred
+        uint8_t spoofing            : 1; // true if a spoofing related failsafe has occurred
     } failsafe;
 
     bool any_failsafe_triggered() const {
-        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
+        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb || failsafe.spoofing;
     }
 
     // sensor health for logging
@@ -653,6 +660,7 @@ private:
     void set_simple_mode(uint8_t b);
     void set_failsafe_radio(bool b);
     void set_failsafe_gcs(bool b);
+    void set_failsafe_spoofing(bool b);
     void update_using_interlock();
 
     // ArduCopter.cpp
@@ -671,6 +679,10 @@ private:
     void update_super_simple_bearing(bool force_update);
     void read_AHRS(void);
     void update_altitude();
+
+    void data_loop();
+    void spoofing_loop();
+    void ekf_loop();
 
     // Attitude.cpp
     float get_pilot_desired_yaw_rate(int16_t stick_angle);
@@ -731,6 +743,8 @@ private:
     void failsafe_gcs_check();
     void failsafe_gcs_on_event(void);
     void failsafe_gcs_off_event(void);
+    void failsafe_spoofing_on_event();
+    void failsafe_spoofing_off_event();
     void failsafe_terrain_check();
     void failsafe_terrain_set_status(bool data_ok);
     void failsafe_terrain_on_event();
@@ -912,6 +926,11 @@ private:
     void userhook_auxSwitch1(uint8_t ch_flag);
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
+
+    // Spoofing
+    void handle_spoofing();
+    void clear_spoofing();
+    void init_defender();
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();

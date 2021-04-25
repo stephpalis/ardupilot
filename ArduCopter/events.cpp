@@ -56,7 +56,7 @@ void Copter::failsafe_radio_on_event()
 
     } else if (control_mode == Mode::Number::AUTO && failsafe_option(FailsafeOption::RC_CONTINUE_IF_AUTO)) {
         // Allow mission to continue when FS_OPTIONS is set to continue mission
-        gcs().send_text(MAV_SEVERITY_WARNING, "Radio Failsafe - Continuing Auto Mode");       
+        gcs().send_text(MAV_SEVERITY_WARNING, "Radio Failsafe - Continuing Auto Mode");
         desired_action = Failsafe_Action_None;
 
     } else if ((flightmode->in_guided_mode()) &&
@@ -80,6 +80,35 @@ void Copter::failsafe_radio_off_event()
     // user can now override roll, pitch, yaw and throttle and even use flight mode switch to restore previous flight mode
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_RADIO, LogErrorCode::FAILSAFE_RESOLVED);
     gcs().send_text(MAV_SEVERITY_WARNING, "Radio Failsafe Cleared");
+}
+
+void Copter::failsafe_spoofing_on_event()
+{
+    Failsafe_Action desired_action = Failsafe_Action_Land;
+
+    // Conditions to deviate from FS_THR_ENABLE selection and send specific GCS warning
+    if (should_disarm_on_failsafe()) {
+        // should immediately disarm when we're on the ground
+        gcs().send_text(MAV_SEVERITY_WARNING, "Spoofing Failsafe - Disarming");
+        arming.disarm();
+        desired_action = Failsafe_Action_None;
+    } else if (flightmode->is_landing() && failsafe_option(FailsafeOption::CONTINUE_IF_LANDING)) {
+        // Allow landing to continue when FS_OPTIONS is set to continue landing
+        gcs().send_text(MAV_SEVERITY_WARNING, "Spoofing Failsafe - Continuing Landing");
+        desired_action = Failsafe_Action_Land;
+    } else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Spoofing Failsafe - Failsafe_Action(%d)", desired_action);
+    }
+
+    // Call the failsafe action handler
+    do_failsafe_action(desired_action, ModeReason::SPOOFING_FAILSAFE);
+}
+
+void Copter::failsafe_spoofing_off_event()
+{
+    // no need to do anything except log the error as resolved
+    // user can now override roll, pitch, yaw and throttle and even use flight mode switch to restore previous flight mode
+    gcs().send_text(MAV_SEVERITY_WARNING, "Spoofing Failsafe Cleared");
 }
 
 void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)

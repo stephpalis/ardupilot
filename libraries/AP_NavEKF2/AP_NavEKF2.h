@@ -127,6 +127,7 @@ public:
     // Returns 1 if attitude, vertical velocity and vertical position will be provided
     // Returns 2 if attitude, 3D-velocity, vertical position and relative horizontal position will be provided
     uint8_t setInhibitGPS(void);
+    bool getInhibitGPS(void);
 
     // Set the argument to true to prevent the EKF using the GPS vertical velocity
     // This can be used for situations where GPS velocity errors are causing problems with height accuracy

@@ -485,6 +485,11 @@ uint8_t NavEKF2_core::setInhibitGPS(void)
     // option 2 is not yet implemented as it requires a deeper integration of optical flow and GPS operation
 }
 
+bool NavEKF2_core::getInhibitGPS(void)
+{
+    return gpsInhibit;
+}
+
 // Update the filter status
 void  NavEKF2_core::updateFilterStatus(void)
 {

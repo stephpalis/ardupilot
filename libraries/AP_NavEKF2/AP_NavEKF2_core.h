@@ -130,6 +130,7 @@ public:
     // Returns 1 if attitude, vertical velocity and vertical position will be provided
     // Returns 2 if attitude, 3D-velocity, vertical position and relative horizontal position will be provided
     uint8_t setInhibitGPS(void);
+    bool getInhibitGPS(void);
 
     // return the horizontal speed limit in m/s set by optical flow sensor limits
     // return the scale factor to be applied to navigation velocity gains to compensate for increase in velocity noise with height when using optical flow

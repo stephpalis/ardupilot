@@ -27,8 +27,9 @@ public:
     AP_InertialSensor ins;
     AP_SerialManager serial_manager;
     RangeFinder sonar;
-    AP_AHRS_NavEKF ahrs{EKF2, EKF3, AP_AHRS_NavEKF::FLAG_ALWAYS_USE_EKF};
+    AP_AHRS_NavEKF ahrs{EKF2, spfEKF2, EKF3, AP_AHRS_NavEKF::FLAG_ALWAYS_USE_EKF};
     NavEKF2 EKF2{&ahrs, sonar};
+    NavEKF2 spfEKF2{&ahrs, sonar};
     NavEKF3 EKF3{&ahrs, sonar};
 };
 
