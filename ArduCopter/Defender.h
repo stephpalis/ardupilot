@@ -6,14 +6,14 @@
 #include <AP_HAL/AP_HAL.h>
 
 // whether or not to send sensor data messages
-#ifndef DEF_SEND_DATA
-#define DEF_SEND_DATA
-#endif
+//#ifndef DEF_SEND_DATA
+//#define DEF_SEND_DATA
+//#endif
 
 // whether or not to send spoofing detection messages
-//#ifndef DEF_SEND_SPF
-//#define DEF_SEND_SPF
-//#endif
+#ifndef DEF_SEND_SPF
+#define DEF_SEND_SPF
+#endif
 
 class Defender {
 public:
@@ -88,24 +88,14 @@ public:
     } spoof_state;
 
 private:
-//    const uint16_t THRESHOLD_ADD = 75;
-//    const uint16_t THRESHOLD_GS_CM = (109 + THRESHOLD_ADD);
-//    const uint16_t THRESHOLD_VX_CM = (115 + THRESHOLD_ADD);
-//    const uint16_t THRESHOLD_VY_CM = (74 + THRESHOLD_ADD);
-//    const uint16_t THRESHOLD_VZ_CM = (40 + THRESHOLD_ADD);
-//    const uint16_t THRESHOLD_ALT_CM = (50 + THRESHOLD_ADD);
-//    const uint16_t THRESHOLD_SPF_MS = 2000;
-//    const uint16_t THRESHOLD_DIFF_COUNT = 3;
-//    const bool EXPECT_GPS_DATA = true;
-
-    const uint16_t THRESHOLD_ADD = 10;
-    const uint16_t THRESHOLD_GS_CM = (117 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VX_CM = (116 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VY_CM = (101 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VZ_CM = (316 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_ALT_CM = (313 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_SPF_MS = 1000;
-    const uint16_t THRESHOLD_DIFF_COUNT = 1;
+    const uint16_t THRESHOLD_ADD = 100;
+    const uint16_t THRESHOLD_GS_CM = (69 + THRESHOLD_ADD);
+    const uint16_t THRESHOLD_VX_CM = (83 + THRESHOLD_ADD);
+    const uint16_t THRESHOLD_VY_CM = (64 + THRESHOLD_ADD);
+    const uint16_t THRESHOLD_VZ_CM = (39 + THRESHOLD_ADD);
+    const uint16_t THRESHOLD_ALT_CM = (259 + THRESHOLD_ADD);
+    const uint16_t THRESHOLD_SPF_MS = 3500;
+    const uint16_t THRESHOLD_DIFF_COUNT = 3;
     const bool EXPECT_GPS_DATA = true;
 
     int16_t initial_gps_altitude = 0;
