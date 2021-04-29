@@ -88,13 +88,13 @@ public:
     } spoof_state;
 
 private:
-    const uint16_t THRESHOLD_ADD = 100;
-    const uint16_t THRESHOLD_GS_CM = (69 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VX_CM = (83 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VY_CM = (64 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_VZ_CM = (39 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_ALT_CM = (259 + THRESHOLD_ADD);
-    const uint16_t THRESHOLD_SPF_MS = 3500;
+    const uint16_t THRESHOLD_ADD = 75;
+    const uint16_t THRESHOLD_GS_CM = (69 + THRESHOLD_ADD);  // 144 cm/s
+    const uint16_t THRESHOLD_VX_CM = (83 + THRESHOLD_ADD);  // 158 cm/s
+    const uint16_t THRESHOLD_VY_CM = (64 + THRESHOLD_ADD);  // 139 cm/s
+    const uint16_t THRESHOLD_VZ_CM = (39 + THRESHOLD_ADD);  // 114 cm/s
+    const uint16_t THRESHOLD_ALT_CM = (259 + THRESHOLD_ADD);  // 334 cm/s
+    const uint16_t THRESHOLD_SPF_MS = 2000;  // 2 seconds
     const uint16_t THRESHOLD_DIFF_COUNT = 3;
     const bool EXPECT_GPS_DATA = true;
 
